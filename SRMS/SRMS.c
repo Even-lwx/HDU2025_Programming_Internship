@@ -394,7 +394,7 @@ void findStudent(StudentDB *db)
 
     printf("未找到学号 %d\n", id);
 }
-
+//修改成绩
 void modifyStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -459,50 +459,68 @@ void modifyStudent(StudentDB *db)
     }
 
     // 修改成绩
-    printf("输入新成绩（按顺序输入五科成绩，输入负数跳过修改，输入0取消修改）: ");
-    float new_scores[NUM_SUBJECTS];
-    int cancel = 0;
+    printf("输入新成绩（按科目逐个输入）：\n");
+    printf("  - 输入-1：取消全部修改\n");
+    printf("  - 输入负数（除-1外）：跳过当前科目\n");
+    printf("  - 输入0：表示0分（合法成绩）\n");
+
+    int cancel_all = 0; // 是否取消全部修改
     for (int j = 0; j < NUM_SUBJECTS; j++)
     {
-        if (scanf("%f", &new_scores[j]) != 1)
+        float new_score;
+        while (1)
         {
+            printf("请输入%s的新成绩: ", SUBJECT_NAMES[j]);
+            if (scanf("%f", &new_score) != 1)
+            {
+                clearInputBuffer();
+                printf("输入格式错误，请重新输入！\n");
+                continue;
+            }
             clearInputBuffer();
-            printf("输入格式错误，修改取消\n");
-            // 恢复原始数据
-            db->data[found_index] = original;
-            return;
-        }
-        if (new_scores[j] == 0)
-        {
-            cancel = 1;
+
+            // 处理取消全部
+            if (new_score == -1)
+            {
+                cancel_all = 1;
+                break;
+            }
+
+            // 处理跳过单科
+            if (new_score < 0 && new_score != -1)
+            {
+                printf("已跳过%s的修改\n", SUBJECT_NAMES[j]);
+                break;
+            }
+
+            // 验证成绩范围
+            if (new_score < 0 || new_score > 100)
+            {
+                printf("警告：成绩应在0-100之间！是否确认输入？(y/n): ");
+                char confirm;
+                scanf(" %c", &confirm);
+                clearInputBuffer();
+                if (confirm != 'y' && confirm != 'Y')
+                {
+                    continue; // 重新输入当前科目
+                }
+            }
+
+            // 有效输入，更新成绩
+            db->data[found_index].scores[j] = new_score;
             break;
         }
-    }
-    clearInputBuffer();
 
-    if (cancel)
-    {
-        if (confirmAction("检测到0，确定要取消修改吗？(y/n): "))
-        {
-            // 恢复原始数据
-            db->data[found_index] = original;
-            printf("修改操作已取消。\n");
-            return;
-        }
-        else
-        {
-            // 继续修改
-            cancel = 0;
-        }
+        if (cancel_all)
+            break; // 取消全部，退出循环
     }
 
-    // 应用成绩修改
-    for (int j = 0; j < NUM_SUBJECTS; j++)
+    // 处理取消全部的情况
+    if (cancel_all)
     {
-        if (new_scores[j] >= 0)
-        {
-            db->data[found_index].scores[j] = new_scores[j];
-        }
+        db->data[found_index] = original; // 恢复原始数据
+        printf("修改操作已取消。\n");
+        return;
     }
 
     // 显示修改后的信息
@@ -514,10 +532,10 @@ void modifyStudent(StudentDB *db)
     }
     printf("平均分: %.2f\n", calculateAverage(&db->data[found_index]));
 
+    // 最终确认
     if (!confirmAction("确认修改吗？(y/n): "))
     {
-        // 恢复原始数据
-        db->data[found_index] = original;
+        db->data[found_index] = original; // 恢复原始数据
         printf("修改操作已取消。\n");
         return;
     }
@@ -525,41 +543,40 @@ void modifyStudent(StudentDB *db)
     saveToFile(db);
     printf("信息更新成功！\n");
 }
-
-void printAll(StudentDB *db)
-{
-    if (db->size == 0)
+    void printAll(StudentDB * db)
     {
-        printf("数据库为空\n");
-        return;
-    }
-
-    printf("\n%-8s %-20s", "学号", "姓名");
-    for (int i = 0; i < NUM_SUBJECTS; i++)
-    {
-        printf(" %-8s", SUBJECT_NAMES[i]);
-    }
-    printf(" %-8s\n", "平均分");
-
-    // 打印分隔线
-    int line_length = 28 + NUM_SUBJECTS * 10;
-    for (int i = 0; i < line_length; i++)
-    {
-        printf("-");
-    }
-    printf("\n");
-
-    for (int i = 0; i < db->size; i++)
-    {
-        printf("%-8d %-20s", db->data[i].id, db->data[i].name);
-        for (int j = 0; j < NUM_SUBJECTS; j++)
+        if (db->size == 0)
         {
-            printf(" %-8.2f", db->data[i].scores[j]);
+            printf("数据库为空\n");
+            return;
         }
-        printf(" %-8.2f\n", calculateAverage(&db->data[i]));
+
+        printf("\n%-8s %-20s", "学号", "姓名");
+        for (int i = 0; i < NUM_SUBJECTS; i++)
+        {
+            printf(" %-8s", SUBJECT_NAMES[i]);
+        }
+        printf(" %-8s\n", "平均分");
+
+        // 打印分隔线
+        int line_length = 28 + NUM_SUBJECTS * 10;
+        for (int i = 0; i < line_length; i++)
+        {
+            printf("-");
+        }
+        printf("\n");
+
+        for (int i = 0; i < db->size; i++)
+        {
+            printf("%-8d %-20s", db->data[i].id, db->data[i].name);
+            for (int j = 0; j < NUM_SUBJECTS; j++)
+            {
+                printf(" %-8.2f", db->data[i].scores[j]);
+            }
+            printf(" %-8.2f\n", calculateAverage(&db->data[i]));
+        }
+        printf("\n共 %d 条记录\n", db->size);
     }
-    printf("\n共 %d 条记录\n", db->size);
-}
 
 void clearInputBuffer() // 清理输入缓冲区
 {
