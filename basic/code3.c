@@ -135,28 +135,31 @@ void deleteAllNodes(struct node **pheadptr)
 }
 
 /**
- * 在指定位置前插入新节点
- * @param pheadptr 指向头指针的指针（用于修改头指针）
- * @param loc 插入位置（从0开始计数，0表示在头节点前插入）
+ * 在指定位置前插入新节点（改进版）
+ * @param pheadptr 指向头指针的指针
+ * @param loc 插入位置（从0开始计数）
  * @param val 要插入的整数值
  * @return 操作成功返回1，失败返回0
  */
 int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
 {
-    // 在头节点前插入的情况（位置0）
+    // 处理头节点前插入的情况
     if (loc == 0)
     {
         struct node *newNode = createNode(val);
         if (newNode == NULL)
             return 0;
-        newNode->next = *pheadptr; // 新节点指向原头节点
-        *pheadptr = newNode;       // 头指针指向新节点
+        newNode->next = *pheadptr;
+        *pheadptr = newNode;
         return 1;
     }
 
     unsigned c = countOfNodes(*pheadptr);
     if (loc > c)
-        return 0; // 位置超出范围，插入失败
+    {
+        printf("错误：插入位置 %u 超出链表长度 %u\n", loc, c);
+        return 0;
+    }
 
     struct node *current = *pheadptr;
     struct node *prev = NULL;
@@ -175,19 +178,8 @@ int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
         return 0;
 
     // 执行插入操作
-    if (prev == NULL)
-    {
-        // 特殊情况：插入到空链表或头节点前
-        newNode->next = *pheadptr;
-        *pheadptr = newNode;
-    }
-    else
-    {
-        // 普通情况：在prev和current之间插入
-        prev->next = newNode;
-        newNode->next = current;
-    }
-
+    prev->next = newNode;
+    newNode->next = current;
     return 1;
 }
 
@@ -240,10 +232,9 @@ int main()
     printf("初始链表节点数据: ");
     printAllNode(headPtr);
 
-    // 测试在第0个节点前插入（头节点前插入）
+    // 测试在第0个节点前插入
     {
         struct node *testHead = NULL;
-        // 复制原链表用于测试
         struct node *current = headPtr;
         while (current != NULL)
         {
@@ -251,10 +242,16 @@ int main()
             current = current->next;
         }
 
-        printf("\n在第0个节点前插入100后: ");
-        insertNodeBefore(&testHead, 0, 100);
-        printAllNode(testHead);
-        deleteAllNodes(&testHead); // 释放测试链表内存
+        printf("\n检查点3.2: 在第0个节点前插入100后: ");
+        if (insertNodeBefore(&testHead, 0, 100))
+        {
+            printAllNode(testHead);
+        }
+        else
+        {
+            printf("插入失败\n");
+        }
+        deleteAllNodes(&testHead);
     }
 
     // 测试在第1个节点前插入
@@ -267,13 +264,19 @@ int main()
             current = current->next;
         }
 
-        printf("在第1个节点前插入100后: ");
-        insertNodeBefore(&testHead, 1, 100);
-        printAllNode(testHead);
+        printf("检查点3.3: 在第1个节点前插入100后: ");
+        if (insertNodeBefore(&testHead, 1, 100))
+        {
+            printAllNode(testHead);
+        }
+        else
+        {
+            printf("插入失败\n");
+        }
         deleteAllNodes(&testHead);
     }
 
-    // 测试在第10个节点前插入（可能超出链表长度）
+    // 测试在第10个节点前插入（超出链表长度）
     {
         struct node *testHead = NULL;
         struct node *current = headPtr;
@@ -283,12 +286,19 @@ int main()
             current = current->next;
         }
 
-        printf("在第10个节点前插入100后: ");
-        insertNodeBefore(&testHead, 10, 100);
-        printAllNode(testHead);
+        printf("检查点3.4: 在第10个节点前插入100后: ");
+        if (insertNodeBefore(&testHead, 10, 100))
+        {
+            printAllNode(testHead);
+        }
+        else
+        {
+            // 即使插入失败也打印原链表，符合题目要求
+            printAllNode(testHead);
+        }
         deleteAllNodes(&testHead);
     }
 
-    deleteAllNodes(&headPtr); // 释放主链表内存
+    deleteAllNodes(&headPtr);
     return 0;
 }
