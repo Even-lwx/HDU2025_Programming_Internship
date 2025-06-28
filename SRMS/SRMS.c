@@ -58,9 +58,9 @@ int main()
         printf("\n学生成绩管理系统\n");
         printf("1. 添加学生\n");
         printf("2. 删除学生\n");
-        printf("3. 查找学生\n");
+        printf("3. 显示所有学生\n");
         printf("4. 修改学生\n");
-        printf("5. 显示所有学生\n");
+        printf("5. 查找学生\n");
         printf("6. 设置排序方式\n");
         printf("0. 退出系统\n");
         printf("请选择操作: ");
@@ -76,13 +76,13 @@ int main()
             deleteStudent(&db);
             break;
         case 3:
-            findStudent(&db);
+            printAll(&db);
             break;
         case 4:
             modifyStudent(&db);
             break;
         case 5:
-            printAll(&db);
+            findStudent(&db);
             break;
         case 6:
             setSortMode(&db);
@@ -215,7 +215,7 @@ void initDB(StudentDB *db)
     }
     db->size = 0;
     db->capacity = INIT_CAPACITY;
-    db->sort_mode = 1; // 默认按学号升序排序
+    db->sort_mode = 3; // 默认按名字升序排序
 }
 
 void loadFromFile(StudentDB *db)
