@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h> // 添加bool类型支持
+#include <stdbool.h>
 
 #define MAX_NAME_LEN 50 // 名字最长长度
 #define FILENAME "students.txt"
@@ -24,6 +24,7 @@ typedef struct
     Student *data;
     int size;
     int capacity;
+    int sort_mode; // 0: 无排序, 1: 按学号升序, 2: 按学号降序, 3: 按姓名升序, 4: 按姓名降序
 } StudentDB;
 
 // 函数声明
@@ -39,15 +40,17 @@ void resizeDB(StudentDB *db, int new_capacity);
 void clearInputBuffer();
 float calculateAverage(Student *s);
 int confirmAction(const char *prompt);
-void sortStudents(StudentDB *db);                // 新增排序函数
+void applySort(StudentDB *db);                   // 应用当前排序规则
 int compareById(const void *a, const void *b);   // 学号比较函数
 int compareByName(const void *a, const void *b); // 姓名比较函数
+void setSortMode(StudentDB *db);                 // 设置排序模式
 
 int main()
 {
     StudentDB db;
     initDB(&db);
     loadFromFile(&db);
+    applySort(&db); // 初始加载后立即排序
 
     int choice;
     do
@@ -58,7 +61,7 @@ int main()
         printf("3. 查找学生\n");
         printf("4. 修改学生\n");
         printf("5. 显示所有学生\n");
-        printf("6. 排序学生\n"); // 新增排序选项
+        printf("6. 设置排序方式\n"); // 排序设置选项
         printf("0. 退出系统\n");
         printf("请选择操作: ");
         scanf("%d", &choice);
@@ -81,8 +84,8 @@ int main()
         case 5:
             printAll(&db);
             break;
-        case 6: // 新增排序功能
-            sortStudents(&db);
+        case 6:
+            setSortMode(&db);
             break;
         case 0:
             if (confirmAction("确定要退出系统吗？(y/n): "))
@@ -102,37 +105,63 @@ int main()
     return 0;
 }
 
-// 新增：排序学生函数
-void sortStudents(StudentDB *db)
+// 设置排序模式
+void setSortMode(StudentDB *db)
 {
-    if (db->size == 0)
-    {
-        printf("数据库为空，无法排序\n");
-        return;
-    }
-
     int choice;
     printf("\n请选择排序方式:\n");
     printf("1. 按学号升序排列\n");
     printf("2. 按学号降序排列\n");
     printf("3. 按姓名升序排列\n");
     printf("4. 按姓名降序排列\n");
-    printf("0. 取消排序\n");
+    printf("0. 取消排序（保持添加顺序）\n");
+    printf("当前排序方式: ");
+    switch (db->sort_mode)
+    {
+    case 0:
+        printf("无排序\n");
+        break;
+    case 1:
+        printf("学号升序\n");
+        break;
+    case 2:
+        printf("学号降序\n");
+        break;
+    case 3:
+        printf("姓名升序\n");
+        break;
+    case 4:
+        printf("姓名降序\n");
+        break;
+    }
     printf("请选择: ");
     scanf("%d", &choice);
     clearInputBuffer();
 
-    if (choice == 0)
+    if (choice >= 0 && choice <= 4)
     {
-        printf("排序操作已取消\n");
-        return;
+        db->sort_mode = choice;
+        applySort(db);
+        printf("排序方式已设置\n");
+    }
+    else
+    {
+        printf("无效选择\n");
+    }
+}
+
+// 应用当前排序规则
+void applySort(StudentDB *db)
+{
+    if (db->size == 0 || db->sort_mode == 0)
+    {
+        return; // 无数据或不需要排序
     }
 
-    switch (choice)
+    switch (db->sort_mode)
     {
     case 1: // 学号升序
         qsort(db->data, db->size, sizeof(Student), compareById);
-        printf("已按学号升序排列\n");
         break;
     case 2: // 学号降序
         qsort(db->data, db->size, sizeof(Student), compareById);
@@ -143,11 +172,9 @@ void sortStudents(StudentDB *db)
             db->data[i] = db->data[db->size - 1 - i];
             db->data[db->size - 1 - i] = temp;
         }
-        printf("已按学号降序排列\n");
         break;
     case 3: // 姓名升序
         qsort(db->data, db->size, sizeof(Student), compareByName);
-        printf("已按姓名升序排列\n");
         break;
     case 4: // 姓名降序
         qsort(db->data, db->size, sizeof(Student), compareByName);
@@ -158,26 +185,11 @@ void sortStudents(StudentDB *db)
             db->data[i] = db->data[db->size - 1 - i];
             db->data[db->size - 1 - i] = temp;
         }
-        printf("已按姓名降序排列\n");
         break;
-    default:
-        printf("无效选择，排序未执行\n");
-        return;
-    }
-
-    // 询问用户是否保存排序结果
-    if (confirmAction("是否保存排序结果到文件？(y/n): "))
-    {
-        saveToFile(db);
-        printf("排序结果已保存\n");
-    }
-    else
-    {
-        printf("排序结果未保存\n");
     }
 }
 
-// 新增：学号比较函数
+// 学号比较函数
 int compareById(const void *a, const void *b)
 {
     Student *studentA = (Student *)a;
@@ -185,7 +197,7 @@ int compareById(const void *a, const void *b)
     return (studentA->id - studentB->id);
 }
 
-// 新增：姓名比较函数
+// 姓名比较函数
 int compareByName(const void *a, const void *b)
 {
     Student *studentA = (Student *)a;
@@ -193,7 +205,6 @@ int compareByName(const void *a, const void *b)
     return strcmp(studentA->name, studentB->name);
 }
 
-// 以下函数保持不变（与原始代码相同）
 void initDB(StudentDB *db)
 {
     db->data = (Student *)malloc(INIT_CAPACITY * sizeof(Student));
@@ -204,6 +215,7 @@ void initDB(StudentDB *db)
     }
     db->size = 0;
     db->capacity = INIT_CAPACITY;
+    db->sort_mode = 1; // 默认按学号升序排序
 }
 
 void loadFromFile(StudentDB *db)
@@ -390,6 +402,10 @@ void addStudent(StudentDB *db)
     }
 
     db->data[db->size++] = new_student;
+
+    // 添加后自动排序
+    applySort(db);
+
     saveToFile(db); // 立即保存到文件
     printf("学生添加成功！\n");
 }
@@ -455,6 +471,9 @@ void deleteStudent(StudentDB *db)
         resizeDB(db, db->capacity / 2);
     }
 
+    // 删除后自动排序
+    applySort(db);
+
     saveToFile(db);
     printf("学号 %d 已删除\n", id);
 }
@@ -494,7 +513,7 @@ void findStudent(StudentDB *db)
 
     printf("未找到学号 %d\n", id);
 }
-// 修改成绩
+
 void modifyStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -640,6 +659,9 @@ void modifyStudent(StudentDB *db)
         return;
     }
 
+    // 修改后自动排序
+    applySort(db);
+
     saveToFile(db);
     printf("信息更新成功！\n");
 }
@@ -650,6 +672,27 @@ void printAll(StudentDB *db)
     {
         printf("数据库为空\n");
         return;
+    }
+
+    // 显示当前排序方式
+    printf("\n当前排序方式: ");
+    switch (db->sort_mode)
+    {
+    case 0:
+        printf("无排序（按添加顺序）\n");
+        break;
+    case 1:
+        printf("学号升序\n");
+        break;
+    case 2:
+        printf("学号降序\n");
+        break;
+    case 3:
+        printf("姓名升序\n");
+        break;
+    case 4:
+        printf("姓名降序\n");
+        break;
     }
 
     printf("\n%-8s %-20s", "学号", "姓名");
