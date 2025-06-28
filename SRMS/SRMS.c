@@ -49,8 +49,8 @@ int main()
 {
     StudentDB db;
     initDB(&db);
-    loadFromFile(&db);
-    applySort(&db); // 初始加载后立即排序
+    loadFromFile(&db); // 加载数据时会恢复排序模式
+    applySort(&db);    // 初始加载后立即排序
 
     int choice;
     do
@@ -61,7 +61,7 @@ int main()
         printf("3. 查找学生\n");
         printf("4. 修改学生\n");
         printf("5. 显示所有学生\n");
-        printf("6. 设置排序方式\n"); // 排序设置选项
+        printf("6. 设置排序方式\n");
         printf("0. 退出系统\n");
         printf("请选择操作: ");
         scanf("%d", &choice);
@@ -227,6 +227,14 @@ void loadFromFile(StudentDB *db)
         return;
     }
 
+    // 尝试读取排序模式（文件第一行）
+    if (fscanf(file, "SortMode: %d\n", &db->sort_mode) != 1)
+    {
+        // 如果文件没有排序模式标记，重置到文件开头
+        rewind(file);
+        db->sort_mode = 1; // 使用默认排序模式
+    }
+
     Student s;
     while (fscanf(file, "%d \"%49[^\"]\"", &s.id, s.name) == 2)
     {
@@ -248,7 +256,7 @@ void loadFromFile(StudentDB *db)
     }
 
     fclose(file);
-    printf("成功加载 %d 条记录\n", db->size);
+    printf("成功加载 %d 条记录，排序模式: %d\n", db->size, db->sort_mode);
 }
 
 void saveToFile(StudentDB *db)
@@ -259,6 +267,9 @@ void saveToFile(StudentDB *db)
         fprintf(stderr, "无法打开文件进行写入\n");
         return;
     }
+
+    // 保存排序模式（文件第一行）
+    fprintf(file, "SortMode: %d\n", db->sort_mode);
 
     for (int i = 0; i < db->size; i++)
     {
@@ -271,7 +282,7 @@ void saveToFile(StudentDB *db)
     }
 
     fclose(file);
-    printf("数据已保存到文件\n");
+    printf("数据已保存到文件（排序模式: %d）\n", db->sort_mode);
 }
 
 void resizeDB(StudentDB *db, int new_capacity)
