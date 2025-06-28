@@ -267,7 +267,7 @@ void addStudent(StudentDB *db)
                 }
             }
 
-                        // 输入有效，退出当前科目输入循环
+            // 输入有效，退出当前科目输入循环
             break;
         }
     }
@@ -350,7 +350,7 @@ void deleteStudent(StudentDB *db)
     db->size--;
 
     // 如果空间利用率低于25%，缩小容量
-    if (db->size > 0 && db->size < db->capacity / 4)
+    if (db->size > INIT_CAPACITY && db->size < db->capacity / 4)
     {
         resizeDB(db, db->capacity / 2);
     }
@@ -394,7 +394,7 @@ void findStudent(StudentDB *db)
 
     printf("未找到学号 %d\n", id);
 }
-//修改成绩
+// 修改成绩
 void modifyStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -543,40 +543,41 @@ void modifyStudent(StudentDB *db)
     saveToFile(db);
     printf("信息更新成功！\n");
 }
-    void printAll(StudentDB * db)
+
+void printAll(StudentDB *db)
+{
+    if (db->size == 0)
     {
-        if (db->size == 0)
-        {
-            printf("数据库为空\n");
-            return;
-        }
-
-        printf("\n%-8s %-20s", "学号", "姓名");
-        for (int i = 0; i < NUM_SUBJECTS; i++)
-        {
-            printf(" %-8s", SUBJECT_NAMES[i]);
-        }
-        printf(" %-8s\n", "平均分");
-
-        // 打印分隔线
-        int line_length = 28 + NUM_SUBJECTS * 10;
-        for (int i = 0; i < line_length; i++)
-        {
-            printf("-");
-        }
-        printf("\n");
-
-        for (int i = 0; i < db->size; i++)
-        {
-            printf("%-8d %-20s", db->data[i].id, db->data[i].name);
-            for (int j = 0; j < NUM_SUBJECTS; j++)
-            {
-                printf(" %-8.2f", db->data[i].scores[j]);
-            }
-            printf(" %-8.2f\n", calculateAverage(&db->data[i]));
-        }
-        printf("\n共 %d 条记录\n", db->size);
+        printf("数据库为空\n");
+        return;
     }
+
+    printf("\n%-8s %-20s", "学号", "姓名");
+    for (int i = 0; i < NUM_SUBJECTS; i++)
+    {
+        printf(" %-8s", SUBJECT_NAMES[i]);
+    }
+    printf(" %-8s\n", "平均分");
+
+    // 打印分隔线
+    int line_length = 28 + NUM_SUBJECTS * 10;
+    for (int i = 0; i < line_length; i++)
+    {
+        printf("-");
+    }
+    printf("\n");
+
+    for (int i = 0; i < db->size; i++)
+    {
+        printf("%-8d %-20s", db->data[i].id, db->data[i].name);
+        for (int j = 0; j < NUM_SUBJECTS; j++)
+        {
+            printf(" %-8.2f", db->data[i].scores[j]);
+        }
+        printf(" %-8.2f\n", calculateAverage(&db->data[i]));
+    }
+    printf("\n共 %d 条记录\n", db->size);
+}
 
 void clearInputBuffer() // 清理输入缓冲区
 {
