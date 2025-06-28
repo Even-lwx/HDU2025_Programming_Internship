@@ -116,7 +116,7 @@ void loadFromFile(StudentDB *db)
     }
 
     Student s;
-    while (fscanf(file, "%d %49s", &s.id, s.name) == 2)
+    while (fscanf(file, "%d \"%49[^\"]\"", &s.id, s.name) == 2)
     {
         for (int i = 0; i < NUM_SUBJECTS; i++)
         {
@@ -150,7 +150,7 @@ void saveToFile(StudentDB *db)
 
     for (int i = 0; i < db->size; i++)
     {
-        fprintf(file, "%d %s", db->data[i].id, db->data[i].name);
+        fprintf(file, "%d \"%s\"", db->data[i].id, db->data[i].name);
         for (int j = 0; j < NUM_SUBJECTS; j++)
         {
             fprintf(file, " %.2f", db->data[i].scores[j]);
