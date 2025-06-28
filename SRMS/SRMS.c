@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_NAME_LEN 50
+#define MAX_NAME_LEN 50 // 名字最长长度
 #define FILENAME "students.txt"
 #define INIT_CAPACITY 2
 #define NUM_SUBJECTS 5
@@ -238,30 +238,37 @@ void addStudent(StudentDB *db)
     }
 
     // 输入成绩（可取消）
-    printf("请输入五科成绩（科目1 科目2 科目3 科目4 科目5），输入0取消: ");
+    printf("开始输入各科成绩（输入负数取消）\n");
     for (int i = 0; i < NUM_SUBJECTS; i++)
     {
-        if (scanf("%f", &new_student.scores[i]) != 1)
+        while (1)
         {
-            clearInputBuffer();
-            printf("输入格式错误，操作取消\n");
-            return;
-        }
-        // 检查是否取消
-        if (new_student.scores[i] == 0)
-        {
-            // 确认取消
-            if (confirmAction("检测到0，确定要取消添加吗？(y/n): "))
+            printf("请输入%s的成绩: ", SUBJECT_NAMES[i]);
+            if (scanf("%f", &new_student.scores[i]) != 1)
             {
-                printf("添加操作已取消。\n");
-                return;
-            }
-            else
-            {
-                // 重新输入当前科目
-                i--;
+                clearInputBuffer();
+                printf("输入格式错误，请输入数字!\n");
                 continue;
             }
+            clearInputBuffer();
+
+            // 检测负数（取消逻辑）
+            if (new_student.scores[i] < 0)
+            {
+                if (confirmAction("检测到负数，确定要取消添加吗？(y/n): "))
+                {
+                    printf("添加操作已取消。\n");
+                    return;
+                }
+                else
+                {
+                    // 重新输入当前科目
+                    continue;
+                }
+            }
+
+                        // 输入有效，退出当前科目输入循环
+            break;
         }
     }
     clearInputBuffer();
@@ -554,7 +561,7 @@ void printAll(StudentDB *db)
     printf("\n共 %d 条记录\n", db->size);
 }
 
-void clearInputBuffer()
+void clearInputBuffer() // 清理输入缓冲区
 {
     int c;
     while ((c = getchar()) != '\n' && c != EOF)
