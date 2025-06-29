@@ -868,13 +868,13 @@ void modifyStudent(StudentDB *db)
         int new_id = atoi(id_buf);
         if (new_id > 0)
         {
-            // 检查学号重复
+            // 检查学号重复（排除当前学生）
             int duplicate = 0;
             for (int i = 0; i < db->size; i++)
             {
                 if (i != found_index && db->data[i].id == new_id)
                 {
-                    printf("学号已存在，保留原学号！\n");
+                    printf("错误：学号 %d 已存在！\n", new_id);
                     duplicate = 1;
                     break;
                 }
@@ -905,8 +905,22 @@ void modifyStudent(StudentDB *db)
 
     if (new_name[0] != '\0')
     {
-        strncpy(db->data[found_index].name, new_name, MAX_NAME_LEN);
-        printf("姓名已更新为: %s\n", new_name);
+        // 检查姓名重复（排除当前学生）
+        int duplicate = 0;
+        for (int i = 0; i < db->size; i++)
+        {
+            if (i != found_index && strcmp(db->data[i].name, new_name) == 0)
+            {
+                printf("错误：姓名 '%s' 已存在！\n", new_name);
+                duplicate = 1;
+                break;
+            }
+        }
+        if (!duplicate)
+        {
+            strncpy(db->data[found_index].name, new_name, MAX_NAME_LEN);
+            printf("姓名已更新为: %s\n", new_name);
+        }
     }
 
     /* 修改成绩 */
