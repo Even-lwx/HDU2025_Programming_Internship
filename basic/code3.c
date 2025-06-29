@@ -135,7 +135,7 @@ void deleteAllNodes(struct node **pheadptr)
 }
 
 /**
- * 在指定位置前插入新节点（改进版）
+ * 在指定位置前插入新节点（超出范围报错）
  * @param pheadptr 指向头指针的指针
  * @param loc 插入位置（从0开始计数）
  * @param val 要插入的整数值
@@ -153,7 +153,7 @@ int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
         *pheadptr = newNode;
         return 1;
     }
-
+    // 处理超出链表长度的情况
     unsigned c = countOfNodes(*pheadptr);
     if (loc > c)
     {
@@ -165,7 +165,7 @@ int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
     struct node *prev = NULL;
     unsigned pos = 0;
 
-    // 找到插入位置的前一个节点
+    // 找到插入位置的前一个节点（pos始终指向current的前一个节点）
     while (current != NULL && pos < loc)
     {
         prev = current;
@@ -177,11 +177,69 @@ int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
     if (newNode == NULL)
         return 0;
 
-    // 执行插入操作
+    // 执行插入操作（修改指针域）
     prev->next = newNode;
     newNode->next = current;
     return 1;
 }
+
+// /**
+//  * 在指定位置前插入新节点（超出范围直接加在末尾）
+//  * @param pheadptr 指向头指针的指针
+//  * @param loc 插入位置（从0开始计数）
+//  * @param val 要插入的整数值
+//  * @return 操作成功返回1，失败返回0
+//  */
+// int insertNodeBefore(struct node **pheadptr, unsigned loc, int val)
+// {
+//     // 处理头节点前插入的情况
+//     if (loc == 0)
+//     {
+//         struct node *newNode = createNode(val);
+//         if (newNode == NULL)
+//             return 0;
+//         newNode->next = *pheadptr;
+//         *pheadptr = newNode;
+//         return 1;
+//     }
+
+//     // 处理空链表情况
+//     if (*pheadptr == NULL)
+//     {
+//         // 如果链表为空，直接添加新节点
+//         return addNode(pheadptr, val);
+//     }
+
+//     struct node *current = *pheadptr;
+//     struct node *prev = NULL;
+//     unsigned pos = 0;
+
+//     // 遍历链表直到找到位置或到达尾部
+//     while (current != NULL && pos < loc)
+//     {
+//         prev = current;
+//         current = current->next;
+//         pos++;
+//     }
+
+//     // 创建新节点
+//     struct node *newNode = createNode(val);
+//     if (newNode == NULL)
+//         return 0;
+
+//     // 如果位置超出链表长度，插入到尾部
+//     if (pos < loc)
+//     {
+//         // 到达链表尾部，将新节点附加到尾部
+//         prev->next = newNode;
+//         return 1;
+//     }
+
+//     // 在指定位置前插入节点
+//     prev->next = newNode;
+//     newNode->next = current;
+//     return 1;
+// }
 
 /**
  * 从文件读取数据构建链表
@@ -198,7 +256,7 @@ int buildListFromFile(struct node **pheadptr, const char *filename)
         return 0;
     }
 
-    char buffer[1024];
+    char buffer[1024]; //
     // 读取文件中的一行数据
     if (fgets(buffer, sizeof(buffer), file) == NULL)
     {
