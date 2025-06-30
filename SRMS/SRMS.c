@@ -4,31 +4,34 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#define MAX_NAME_LEN 50   // 名字最长长度
-#define MAX_STUDENTS 1000 // 最大学生数量
-#define FILENAME "students.txt"
-#define INIT_CAPACITY 2
-#define NUM_SUBJECTS 5
+/* 宏定义 */
+#define MAX_NAME_LEN 50         // 学生姓名最大长度
+#define MAX_STUDENTS 1000       // 最大学生数量
+#define FILENAME "students.txt" // 数据文件名
+#define INIT_CAPACITY 2         // 初始内存容量
+#define NUM_SUBJECTS 5          // 科目数量
 
-// 科目名称定义
+/* 科目名称定义 */
 const char *SUBJECT_NAMES[] = {"科目1", "科目2", "科目3", "科目4", "科目5"};
 
+/* 学生结构体定义 */
 typedef struct
 {
-    int id;
-    char name[MAX_NAME_LEN];
-    float scores[NUM_SUBJECTS]; // 五科成绩
+    int id;                     // 学号
+    char name[MAX_NAME_LEN];    // 姓名
+    float scores[NUM_SUBJECTS]; // 各科成绩
 } Student;
 
+/* 学生数据库结构体定义 */
 typedef struct
 {
-    Student *data;
-    int size;
-    int capacity;
-    int sort_mode; // 0: 无排序, 1: 按学号升序, 2: 按学号降序, 3: 按姓名升序, 4: 按姓名降序
+    Student *data; // 学生数据数组
+    int size;      // 已存储学生数量
+    int capacity;  // 数据库容量
+    int sort_mode; // 排序模式(0:无排序,1:学号升序,2:学号降序,3:姓名升序,4:姓名降序)
 } StudentDB;
 
-// 函数声明
+/* 函数声明 */
 void initDB(StudentDB *db);
 void loadFromFile(StudentDB *db);
 void saveToFile(StudentDB *db);
@@ -41,17 +44,18 @@ void resizeDB(StudentDB *db, int new_capacity);
 void clearInputBuffer();
 float calculateAverage(Student *s);
 int confirmAction(const char *prompt);
-void applySort(StudentDB *db);                   // 应用当前排序规则
-int compareById(const void *a, const void *b);   // 学号比较函数
-int compareByName(const void *a, const void *b); // 姓名比较函数
-void setSortMode(StudentDB *db);                 // 设置排序模式
+void applySort(StudentDB *db);
+int compareById(const void *a, const void *b);
+int compareByName(const void *a, const void *b);
+void setSortMode(StudentDB *db);
 
+/* 主函数 */
 int main()
 {
     StudentDB db;
     initDB(&db);
-    loadFromFile(&db); // 加载数据时会恢复排序模式
-    applySort(&db);    // 初始加载后立即排序
+    loadFromFile(&db);
+    applySort(&db);
 
     int choice;
     do
@@ -66,7 +70,7 @@ int main()
         printf("0. 退出系统\n");
         printf("请选择操作: ");
         scanf("%d", &choice);
-        clearInputBuffer(); // 清除输入缓冲区
+        clearInputBuffer();
 
         switch (choice)
         {
@@ -100,13 +104,12 @@ int main()
         }
     } while (choice != 0);
 
-    // 保存数据并释放内存
     saveToFile(&db);
     free(db.data);
     return 0;
 }
 
-// 设置排序模式
+/* 设置排序模式 */
 void setSortMode(StudentDB *db)
 {
     int choice;
@@ -117,6 +120,7 @@ void setSortMode(StudentDB *db)
     printf("4. 按姓名降序排列\n");
     printf("0. 取消排序（保持添加顺序）\n");
     printf("当前排序方式: ");
+
     switch (db->sort_mode)
     {
     case 0:
@@ -135,6 +139,7 @@ void setSortMode(StudentDB *db)
         printf("姓名降序\n");
         break;
     }
+
     printf("请选择: ");
     scanf("%d", &choice);
     clearInputBuffer();
@@ -151,12 +156,12 @@ void setSortMode(StudentDB *db)
     }
 }
 
-// 应用当前排序规则
+/* 应用排序规则 */
 void applySort(StudentDB *db)
 {
     if (db->size == 0 || db->sort_mode == 0)
     {
-        return; // 无数据或不需要排序
+        return;
     }
 
     switch (db->sort_mode)
@@ -166,7 +171,6 @@ void applySort(StudentDB *db)
         break;
     case 2: // 学号降序
         qsort(db->data, db->size, sizeof(Student), compareById);
-        // 反转数组实现降序
         for (int i = 0; i < db->size / 2; i++)
         {
             Student temp = db->data[i];
@@ -179,7 +183,6 @@ void applySort(StudentDB *db)
         break;
     case 4: // 姓名降序
         qsort(db->data, db->size, sizeof(Student), compareByName);
-        // 反转数组实现降序
         for (int i = 0; i < db->size / 2; i++)
         {
             Student temp = db->data[i];
@@ -190,7 +193,7 @@ void applySort(StudentDB *db)
     }
 }
 
-// 学号比较函数
+/* 按学号比较函数 */
 int compareById(const void *a, const void *b)
 {
     Student *studentA = (Student *)a;
@@ -198,7 +201,7 @@ int compareById(const void *a, const void *b)
     return (studentA->id - studentB->id);
 }
 
-// 姓名比较函数
+/* 按姓名比较函数 */
 int compareByName(const void *a, const void *b)
 {
     Student *studentA = (Student *)a;
@@ -206,6 +209,7 @@ int compareByName(const void *a, const void *b)
     return strcmp(studentA->name, studentB->name);
 }
 
+/* 初始化数据库 */
 void initDB(StudentDB *db)
 {
     db->data = (Student *)malloc(INIT_CAPACITY * sizeof(Student));
@@ -216,9 +220,10 @@ void initDB(StudentDB *db)
     }
     db->size = 0;
     db->capacity = INIT_CAPACITY;
-    db->sort_mode = 3; // 默认按名字升序排序
+    db->sort_mode = 3; // 默认按姓名升序
 }
 
+/* 从文件加载数据 */
 void loadFromFile(StudentDB *db)
 {
     FILE *file = fopen(FILENAME, "r");
@@ -228,12 +233,11 @@ void loadFromFile(StudentDB *db)
         return;
     }
 
-    // 尝试读取排序模式（文件第一行）
+    // 读取排序模式
     if (fscanf(file, "SortMode: %d\n", &db->sort_mode) != 1)
     {
-        // 如果文件没有排序模式标记，重置到文件开头
         rewind(file);
-        db->sort_mode = 3; // 使用默认排序模式
+        db->sort_mode = 3; // 使用默认排序
     }
 
     Student s;
@@ -260,6 +264,7 @@ void loadFromFile(StudentDB *db)
     printf("成功加载 %d 条记录，排序模式: %d\n", db->size, db->sort_mode);
 }
 
+/* 保存数据到文件 */
 void saveToFile(StudentDB *db)
 {
     FILE *file = fopen(FILENAME, "w");
@@ -269,7 +274,7 @@ void saveToFile(StudentDB *db)
         return;
     }
 
-    // 保存排序模式（文件第一行）
+    // 保存排序模式
     fprintf(file, "SortMode: %d\n", db->sort_mode);
 
     for (int i = 0; i < db->size; i++)
@@ -286,6 +291,7 @@ void saveToFile(StudentDB *db)
     printf("数据已保存到文件（排序模式: %d）\n", db->sort_mode);
 }
 
+/* 调整数据库容量 */
 void resizeDB(StudentDB *db, int new_capacity)
 {
     Student *new_data = (Student *)realloc(db->data, new_capacity * sizeof(Student));
@@ -298,6 +304,7 @@ void resizeDB(StudentDB *db, int new_capacity)
     db->capacity = new_capacity;
 }
 
+/* 确认操作 */
 int confirmAction(const char *prompt)
 {
     char choice;
@@ -307,7 +314,7 @@ int confirmAction(const char *prompt)
     return (choice == 'y' || choice == 'Y');
 }
 
-// 显示成绩（0显示为空格，非0显示数值）
+/* 显示成绩（0显示为空格，非0显示数值） */
 void displayScore(float score)
 {
     if (score == 0.0f)
@@ -320,7 +327,7 @@ void displayScore(float score)
     }
 }
 
-// 添加学生函数（核心修改部分）
+/* 添加学生 */
 void addStudent(StudentDB *db)
 {
     int mode;
@@ -328,7 +335,7 @@ void addStudent(StudentDB *db)
     {
         printf("\n添加学生模式:\n");
         printf("1. 单个添加 (输入完整信息)\n");
-        printf("2. 批量添加 (仅输入多个姓名，学号自增，成绩默认空)\n"); // 修改提示信息
+        printf("2. 批量添加 (仅输入多个姓名，学号自增，成绩默认空)\n");
         printf("请选择模式 (1-2): ");
 
         if (scanf("%d", &mode) != 1)
@@ -399,6 +406,7 @@ void addStudent(StudentDB *db)
                 end--;
             end[1] = 0;
 
+            // 检查姓名重复
             int db_duplicate = 0;
             for (int i = 0; i < db->size; i++)
             {
@@ -434,6 +442,7 @@ void addStudent(StudentDB *db)
                 resizeDB(db, db->capacity * 2);
             }
 
+            // 创建新学生记录
             Student new_student;
             new_student.id = start_id + added_count;
             strncpy(new_student.name, name, MAX_NAME_LEN - 1);
@@ -441,7 +450,7 @@ void addStudent(StudentDB *db)
 
             for (int i = 0; i < NUM_SUBJECTS; i++)
             {
-                new_student.scores[i] = 0.0f; // 存储0，但显示为空格
+                new_student.scores[i] = 0.0f;
             }
 
             db->data[db->size++] = new_student;
@@ -463,7 +472,7 @@ void addStudent(StudentDB *db)
         {
             printf("警告：跳过 %d 个无效或重复姓名\n", error_count);
         }
-        printf("学号从 %d 开始连续分配，成绩默认为空\n", start_id); // 修改提示信息
+        printf("学号从 %d 开始连续分配，成绩默认为空\n", start_id);
         return;
     }
 
@@ -596,7 +605,7 @@ void addStudent(StudentDB *db)
     for (int i = 0; i < NUM_SUBJECTS; i++)
     {
         printf("%s:", SUBJECT_NAMES[i]);
-        displayScore(new_student.scores[i]); // 使用封装函数显示成绩
+        displayScore(new_student.scores[i]);
         printf(" ");
     }
     printf("\n");
@@ -613,6 +622,7 @@ void addStudent(StudentDB *db)
     printf("学生添加成功！\n");
 }
 
+/* 删除学生 */
 void deleteStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -624,7 +634,7 @@ void deleteStudent(StudentDB *db)
     char name[MAX_NAME_LEN];
     printf("\n请输入要删除的学生姓名 (输入0取消): ");
     fgets(name, MAX_NAME_LEN, stdin);
-    name[strcspn(name, "\n")] = '\0'; // 移除换行符
+    name[strcspn(name, "\n")] = '\0';
 
     if (strcmp(name, "0") == 0)
     {
@@ -656,7 +666,7 @@ void deleteStudent(StudentDB *db)
     {
         if (db->data[found_index].scores[i] == 0.0f)
         {
-            printf("%s:  ", SUBJECT_NAMES[i]); // 0值显示空格
+            printf("%s:  ", SUBJECT_NAMES[i]);
         }
         else
         {
@@ -667,7 +677,7 @@ void deleteStudent(StudentDB *db)
     float avg = calculateAverage(&db->data[found_index]);
     if (avg == 0.0f)
     {
-        printf("  \n"); // 0值显示空格
+        printf("  \n");
     }
     else
     {
@@ -680,23 +690,22 @@ void deleteStudent(StudentDB *db)
         return;
     }
 
-    // 将最后一个元素移到当前位置
+    // 删除学生记录
     db->data[found_index] = db->data[db->size - 1];
     db->size--;
 
-    // 如果空间利用率低于25%，缩小容量
+    // 调整内存容量
     if (db->size > INIT_CAPACITY && db->size < db->capacity / 4)
     {
         resizeDB(db, db->capacity / 2);
     }
 
-    // 删除后自动排序
     applySort(db);
-
     saveToFile(db);
     printf("学生 '%s' (学号: %d) 已删除\n", name, db->data[found_index].id);
 }
 
+/* 查找学生 */
 void findStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -736,18 +745,25 @@ void findStudent(StudentDB *db)
                 {
                     printf("%s: ", SUBJECT_NAMES[j]);
                     if (db->data[i].scores[j] == 0.0f)
-                        printf("  \n"); // 空值显示为两个空格
+                    {
+                        printf("  \n");
+                    }
                     else
+                    {
                         printf("%.2f\n", db->data[i].scores[j]);
+                    }
                 }
 
-                // 平均分显示
                 float avg = calculateAverage(&db->data[i]);
                 printf("平均分: ");
                 if (avg == 0.0f)
-                    printf("  \n"); // 空值显示
+                {
+                    printf("  \n");
+                }
                 else
+                {
                     printf("%.2f\n", avg);
+                }
                 return;
             }
         }
@@ -777,18 +793,25 @@ void findStudent(StudentDB *db)
                 {
                     printf("%s: ", SUBJECT_NAMES[j]);
                     if (db->data[i].scores[j] == 0.0f)
-                        printf("  \n"); // 空值显示
+                    {
+                        printf("  \n");
+                    }
                     else
+                    {
                         printf("%.2f\n", db->data[i].scores[j]);
+                    }
                 }
 
-                // 平均分显示
                 float avg = calculateAverage(&db->data[i]);
                 printf("平均分: ");
                 if (avg == 0.0f)
-                    printf("  \n"); // 空值显示
+                {
+                    printf("  \n");
+                }
                 else
+                {
                     printf("%.2f\n", avg);
+                }
                 return;
             }
         }
@@ -801,6 +824,7 @@ void findStudent(StudentDB *db)
     }
 }
 
+/* 修改学生信息 */
 void modifyStudent(StudentDB *db)
 {
     if (db->size == 0)
@@ -819,10 +843,9 @@ void modifyStudent(StudentDB *db)
 
     int found_index = -1;
 
-    /* 查找学生 */
+    // 查找学生
     if (search_mode == 1)
     {
-        // 按学号查找
         int id;
         printf("\n请输入学号 (输入0取消): ");
         scanf("%d", &id);
@@ -845,7 +868,6 @@ void modifyStudent(StudentDB *db)
     }
     else if (search_mode == 2)
     {
-        // 按姓名查找
         char name[MAX_NAME_LEN];
         printf("\n请输入姓名 (输入0取消): ");
         fgets(name, MAX_NAME_LEN, stdin);
@@ -878,7 +900,7 @@ void modifyStudent(StudentDB *db)
         return;
     }
 
-    /* 显示当前信息 */
+    // 显示当前信息
     printf("\n当前学生信息: ");
     printf("\n学号: %d\n姓名: %s\n", db->data[found_index].id, db->data[found_index].name);
     printf("成绩: ");
@@ -886,7 +908,7 @@ void modifyStudent(StudentDB *db)
     {
         if (db->data[found_index].scores[j] == 0.0f)
         {
-            printf("%s:  ", SUBJECT_NAMES[j]); // 0值显示空格
+            printf("%s:  ", SUBJECT_NAMES[j]);
         }
         else
         {
@@ -897,16 +919,16 @@ void modifyStudent(StudentDB *db)
     float avg = calculateAverage(&db->data[found_index]);
     if (avg == 0.0f)
     {
-        printf("  \n"); // 0值显示空格
+        printf("  \n");
     }
     else
     {
         printf("%.2f\n", avg);
     }
 
-    Student original = db->data[found_index]; // 备份原始数据
+    Student original = db->data[found_index];
 
-    /* 修改学号 */
+    // 修改学号
     printf("\n输入新学号 (回车保留原值，0取消): ");
     char id_buf[20];
     fgets(id_buf, sizeof(id_buf), stdin);
@@ -918,12 +940,11 @@ void modifyStudent(StudentDB *db)
         return;
     }
 
-    if (id_buf[0] != '\0') // 如果用户输入了内容（不是直接回车）
+    if (id_buf[0] != '\0')
     {
         int new_id = atoi(id_buf);
         if (new_id > 0)
         {
-            // 检查学号重复（排除当前学生）
             int duplicate = 0;
             for (int i = 0; i < db->size; i++)
             {
@@ -946,7 +967,7 @@ void modifyStudent(StudentDB *db)
         }
     }
 
-    /* 修改姓名 */
+    // 修改姓名
     printf("\n输入新姓名 (回车保留原值，0取消): ");
     char new_name[MAX_NAME_LEN];
     fgets(new_name, MAX_NAME_LEN, stdin);
@@ -958,9 +979,8 @@ void modifyStudent(StudentDB *db)
         return;
     }
 
-    if (new_name[0] != '\0') // 如果用户输入了内容（不是直接回车）
+    if (new_name[0] != '\0')
     {
-        // 检查姓名重复（排除当前学生）
         int duplicate = 0;
         for (int i = 0; i < db->size; i++)
         {
@@ -978,7 +998,7 @@ void modifyStudent(StudentDB *db)
         }
     }
 
-    /* 修改成绩 */
+    // 修改成绩
     printf("\n开始修改成绩（回车保留原值，-1取消全部）：\n");
     int cancel_all = 0;
 
@@ -992,22 +1012,26 @@ void modifyStudent(StudentDB *db)
         {
             printf("输入%s新成绩 (当前值: ", SUBJECT_NAMES[j]);
             if (db->data[found_index].scores[j] == 0.0f)
-                printf("  "); // 显示空格
+            {
+                printf("  ");
+            }
             else
+            {
                 printf("%.2f", db->data[found_index].scores[j]);
+            }
             printf("): ");
 
             fgets(score_buf, sizeof(score_buf), stdin);
             score_buf[strcspn(score_buf, "\n")] = '\0';
 
-            // 用户直接回车，保留原值
+            // 回车保留原值
             if (score_buf[0] == '\0')
             {
                 valid_input = 1;
-                continue; // 直接跳过本轮循环，不修改成绩
+                continue;
             }
 
-            // 检查是否为-1（取消全部）
+            // 取消全部操作
             if (strcmp(score_buf, "-1") == 0)
             {
                 cancel_all = 1;
@@ -1015,18 +1039,16 @@ void modifyStudent(StudentDB *db)
                 break;
             }
 
-            // 尝试转换为浮点数
+            // 转换成绩
             char *endptr;
             new_score = strtof(score_buf, &endptr);
-
-            // 检查转换是否成功
             if (*endptr != '\0')
             {
                 printf("错误：请输入有效的数字！\n");
                 continue;
             }
 
-            // 检查成绩范围
+            // 验证成绩范围
             if (new_score < 0 || new_score > 100)
             {
                 printf("错误：成绩应在0-100之间！\n");
@@ -1048,7 +1070,7 @@ void modifyStudent(StudentDB *db)
         return;
     }
 
-    /* 确认修改 */
+    // 确认修改
     printf("\n修改后信息: ");
     printf("\n学号: %d\n姓名: %s\n", db->data[found_index].id, db->data[found_index].name);
     printf("成绩: ");
@@ -1056,7 +1078,7 @@ void modifyStudent(StudentDB *db)
     {
         if (db->data[found_index].scores[j] == 0.0f)
         {
-            printf("%s:  ", SUBJECT_NAMES[j]); // 0值显示空格
+            printf("%s:  ", SUBJECT_NAMES[j]);
         }
         else
         {
@@ -1067,7 +1089,7 @@ void modifyStudent(StudentDB *db)
     float new_avg = calculateAverage(&db->data[found_index]);
     if (new_avg == 0.0f)
     {
-        printf("  \n"); // 0值显示空格
+        printf("  \n");
     }
     else
     {
@@ -1086,6 +1108,7 @@ void modifyStudent(StudentDB *db)
     printf("信息更新成功！\n");
 }
 
+/* 显示所有学生 */
 void printAll(StudentDB *db)
 {
     if (db->size == 0)
@@ -1094,7 +1117,7 @@ void printAll(StudentDB *db)
         return;
     }
 
-    // 显示当前排序方式
+    // 显示排序方式
     printf("\n当前排序方式: ");
     switch (db->sort_mode)
     {
@@ -1115,6 +1138,7 @@ void printAll(StudentDB *db)
         break;
     }
 
+    // 打印表头
     printf("\n%-8s %-20s", "学号", "姓名");
     for (int i = 0; i < NUM_SUBJECTS; i++)
     {
@@ -1130,12 +1154,12 @@ void printAll(StudentDB *db)
     }
     printf("\n");
 
+    // 打印学生数据
     for (int i = 0; i < db->size; i++)
     {
         printf("%-8d %-20s", db->data[i].id, db->data[i].name);
         for (int j = 0; j < NUM_SUBJECTS; j++)
         {
-            // 新增判断，成绩为 0 时输出两个空格，否则正常输出两位小数
             if (db->data[i].scores[j] == 0.0f)
             {
                 printf(" %-8s", "  ");
@@ -1145,8 +1169,6 @@ void printAll(StudentDB *db)
                 printf(" %-8.2f", db->data[i].scores[j]);
             }
         }
-        // 平均分同样处理，若想让平均分 0 值也显示空格，也加判断，这里按原逻辑用两位小数示例
-        // 平均分计算与输出
         float avg = calculateAverage(&db->data[i]);
         if (avg == 0.0f)
         {
@@ -1161,13 +1183,15 @@ void printAll(StudentDB *db)
     printf("\n共 %d 条记录\n", db->size);
 }
 
-void clearInputBuffer() // 清理输入缓冲区
+/* 清理输入缓冲区 */
+void clearInputBuffer()
 {
     int c;
     while ((c = getchar()) != '\n' && c != EOF)
         ;
 }
 
+/* 计算平均分 */
 float calculateAverage(Student *s)
 {
     float sum = 0;
