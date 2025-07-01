@@ -69,7 +69,15 @@ int main()
         printf("6. 设置排序方式\n");
         printf("0. 退出系统\n");
         printf("请选择操作: ");
-        scanf("%d", &choice);
+        // 关键：检查 scanf 返回值，判断是否读取到有效整数
+        if (scanf("%d", &choice) != 1)
+        {
+            // 若读取失败，清理缓冲区
+            clearInputBuffer();
+            printf("错误：请输入 0-6 的数字选项！\n");
+            // 重置 choice，重新进入循环
+            continue;
+        }
         clearInputBuffer();
 
         switch (choice)
@@ -101,6 +109,7 @@ int main()
             break;
         default:
             printf("无效选项，请重新输入。\n");
+            choice = -1;
         }
     } while (choice != 0);
 
@@ -315,15 +324,20 @@ int confirmAction(const char *prompt)
 }
 
 /* 显示成绩（0显示为空格，非0显示数值） */
+
 void displayScore(float score)
 {
-    if (score == 0.0f)
+    if (score < 0)
+    {                  // -1.0f 表示未录入
+        printf("   "); // 显示三个空格
+    }
+    else if (score == 0)
     {
-        printf("  "); // 两个空格表示空值
+        printf("0.00"); // 实际0分显示0.00
     }
     else
     {
-        printf("%.2f", score);
+        printf("%.2f", score); // 正常分数
     }
 }
 
@@ -450,7 +464,7 @@ void addStudent(StudentDB *db)
 
             for (int i = 0; i < NUM_SUBJECTS; i++)
             {
-                new_student.scores[i] = 0.0f;
+                new_student.scores[i] = -1.0f;
             }
 
             db->data[db->size++] = new_student;
@@ -664,18 +678,13 @@ void deleteStudent(StudentDB *db)
     printf("成绩: ");
     for (int i = 0; i < NUM_SUBJECTS; i++)
     {
-        if (db->data[found_index].scores[i] == 0.0f)
-        {
-            printf("%s:  ", SUBJECT_NAMES[i]);
-        }
-        else
-        {
-            printf("%s:%.2f ", SUBJECT_NAMES[i], db->data[found_index].scores[i]);
-        }
+        printf("%s:", SUBJECT_NAMES[i]);
+        displayScore(db->data[found_index].scores[i]); // 使用新显示函数
+        printf(" ");
     }
     printf("\n平均分: ");
     float avg = calculateAverage(&db->data[found_index]);
-    if (avg == 0.0f)
+    if (avg < 0.0f)
     {
         printf("  \n");
     }
@@ -744,7 +753,7 @@ void findStudent(StudentDB *db)
                 for (int j = 0; j < NUM_SUBJECTS; j++)
                 {
                     printf("%s: ", SUBJECT_NAMES[j]);
-                    if (db->data[i].scores[j] == 0.0f)
+                    if (db->data[i].scores[j] < 0.0f)
                     {
                         printf("  \n");
                     }
@@ -792,7 +801,7 @@ void findStudent(StudentDB *db)
                 for (int j = 0; j < NUM_SUBJECTS; j++)
                 {
                     printf("%s: ", SUBJECT_NAMES[j]);
-                    if (db->data[i].scores[j] == 0.0f)
+                    if (db->data[i].scores[j] < 0.0f)
                     {
                         printf("  \n");
                     }
@@ -906,7 +915,7 @@ void modifyStudent(StudentDB *db)
     printf("成绩: ");
     for (int j = 0; j < NUM_SUBJECTS; j++)
     {
-        if (db->data[found_index].scores[j] == 0.0f)
+        if (db->data[found_index].scores[j] < 0.0f)
         {
             printf("%s:  ", SUBJECT_NAMES[j]);
         }
@@ -917,7 +926,7 @@ void modifyStudent(StudentDB *db)
     }
     printf("\n平均分: ");
     float avg = calculateAverage(&db->data[found_index]);
-    if (avg == 0.0f)
+    if (avg < 0.0f)
     {
         printf("  \n");
     }
@@ -1011,7 +1020,7 @@ void modifyStudent(StudentDB *db)
         while (!valid_input)
         {
             printf("输入%s新成绩 (当前值: ", SUBJECT_NAMES[j]);
-            if (db->data[found_index].scores[j] == 0.0f)
+            if (db->data[found_index].scores[j] < 0.0f)
             {
                 printf("  ");
             }
@@ -1076,7 +1085,7 @@ void modifyStudent(StudentDB *db)
     printf("成绩: ");
     for (int j = 0; j < NUM_SUBJECTS; j++)
     {
-        if (db->data[found_index].scores[j] == 0.0f)
+        if (db->data[found_index].scores[j] < 0.0f)
         {
             printf("%s:  ", SUBJECT_NAMES[j]);
         }
@@ -1087,7 +1096,7 @@ void modifyStudent(StudentDB *db)
     }
     printf("\n平均分: ");
     float new_avg = calculateAverage(&db->data[found_index]);
-    if (new_avg == 0.0f)
+    if (new_avg < 0.0f)
     {
         printf("  \n");
     }
@@ -1160,7 +1169,7 @@ void printAll(StudentDB *db)
         printf("%-8d %-20s", db->data[i].id, db->data[i].name);
         for (int j = 0; j < NUM_SUBJECTS; j++)
         {
-            if (db->data[i].scores[j] == 0.0f)
+            if (db->data[i].scores[j] < 0.0f)
             {
                 printf(" %-8s", "  ");
             }
@@ -1170,7 +1179,7 @@ void printAll(StudentDB *db)
             }
         }
         float avg = calculateAverage(&db->data[i]);
-        if (avg == 0.0f)
+        if (avg < 0.0f)
         {
             printf(" %-8s\n", "  ");
         }
@@ -1195,9 +1204,20 @@ void clearInputBuffer()
 float calculateAverage(Student *s)
 {
     float sum = 0;
+    int flag = 0;
     for (int i = 0; i < NUM_SUBJECTS; i++)
     {
+        if (s->scores[i] < 0.0f)
+        {
+            flag++;
+            continue;
+        }
+
         sum += s->scores[i];
+    }
+    if (flag == 5)
+    {
+        return -1;
     }
     return sum / NUM_SUBJECTS;
 }
